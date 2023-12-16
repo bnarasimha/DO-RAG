@@ -22,7 +22,7 @@ def download_assets():
                         endpoint_url='https://blr1.digitaloceanspaces.com', # Find your endpoint in the control panel, under Settings. Prepend "https://".
                         region_name='blr1', # Use the region in your endpoint.
                         aws_access_key_id='DO00T4NGNZT7M9QH3TWY', # Access key pair. You can create access key pairs using the control panel or API.
-                        aws_secret_access_key="pErX/MPYQ2Xk8hR15++n6daACSeLr9ojn1GuNQWJSgE") # Secret access key defined through an environment variable.
+                        aws_secret_access_key=os.getenv('SPACES_SECRET')) # Secret access key defined through an environment variable.
 
     client.download_file('validin-knowledge-base', 'rag/main.pdf', 'assets/main.pdf')
 
