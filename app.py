@@ -1,4 +1,5 @@
 import os
+import boto3
 from openai import OpenAI
 import gradio as gr
 from langchain.vectorstores import Chroma
@@ -15,11 +16,23 @@ from langchain.vectorstores import Weaviate
 import weaviate
 from weaviate.embedded import EmbeddedOptions
 
-def getAnswer(message, history):
+def download_assets():
+    session = boto3.session.Session()
+    client = session.client('s3',
+                        endpoint_url='https://blr1.digitaloceanspaces.com', # Find your endpoint in the control panel, under Settings. Prepend "https://".
+                        region_name='blr1', # Use the region in your endpoint.
+                        aws_access_key_id='DO00T4NGNZT7M9QH3TWY', # Access key pair. You can create access key pairs using the control panel or API.
+                        aws_secret_access_key="pErX/MPYQ2Xk8hR15++n6daACSeLr9ojn1GuNQWJSgE") # Secret access key defined through an environment variable.
+
+    client.download_file('validin-knowledge-base', 'rag/main.pdf', 'assets/main.pdf')
+
+download_assets()
+
+def vectorize_assets():
     loaders = [
         PyPDFLoader("assets/main.pdf")
     ]
-    
+
     docs = []
     for loader in loaders:
         docs.extend(loader.load())
@@ -31,7 +44,7 @@ def getAnswer(message, history):
     splits = text_splitter.split_documents(docs)
 
     client = weaviate.Client(
-    embedded_options = EmbeddedOptions()
+        embedded_options = EmbeddedOptions()
     )
 
     vectorstore = Weaviate.from_documents(
@@ -40,7 +53,12 @@ def getAnswer(message, history):
         embedding = OpenAIEmbeddings(),
         by_text = False
     )
+    return docs,vectorstore
 
+docs, vectorstore = vectorize_assets()
+
+def getAnswer(message, history):
+    
     question = message
     context = docs
 
