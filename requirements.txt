@@ -1,5 +1,5 @@
 openai==1.3.8
-gradio==4.8.0
+gradio==3.50.2
 langchain==0.0.349
 pypdf==3.17.2
 chromadb==0.4.18

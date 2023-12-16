@@ -44,8 +44,6 @@ def getAnswer(message, history):
     question = message
     context = docs
 
-    llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0)
-
     template = """You are an assistant for question-answering tasks. 
     Use the following pieces of retrieved context to answer the question. 
     If you don't know the answer, just say that you don't know. 
@@ -70,7 +68,18 @@ def getAnswer(message, history):
 
     return result
 
-demo = gr.ChatInterface(getAnswer)
+demo = gr.ChatInterface(
+    getAnswer,
+    chatbot=gr.Chatbot(height=300),
+    textbox=gr.Textbox(placeholder="Ask me anything about Validin", container=False, scale=7),
+    title="Ask Validin",
+    description="Ask Validin any question",
+    theme="soft",
+    examples=["What are your services", "How do you mitigate cyber risk?"],
+    cache_examples=True,
+    retry_btn=None,
+    undo_btn=None,
+    clear_btn="Clear")
 
 if __name__ == "__main__":
-    demo.launch(show_api=False)
+    demo.launch(show_api=False, debug=False, server_name="0.0.0.0")
