@@ -15,22 +15,31 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Weaviate
 import weaviate
 from weaviate.embedded import EmbeddedOptions
+from langchain.agents import tool
+from langchain.agents import AgentType, initialize_agent
+from langchain.document_loaders import UnstructuredURLLoader
+from langchain.document_loaders import PlaywrightURLLoader
 
 def download_assets():
     session = boto3.session.Session()
     client = session.client('s3',
-                        endpoint_url='https://blr1.digitaloceanspaces.com', # Find your endpoint in the control panel, under Settings. Prepend "https://".
-                        region_name='blr1', # Use the region in your endpoint.
-                        aws_access_key_id='DO00T4NGNZT7M9QH3TWY', # Access key pair. You can create access key pairs using the control panel or API.
-                        aws_secret_access_key=os.getenv('SPACES_SECRET')) # Secret access key defined through an environment variable.
+                        endpoint_url='https://blr1.digitaloceanspaces.com',
+                        region_name='blr1', 
+                        aws_access_key_id='DO00T4NGNZT7M9QH3TWY',
+                        aws_secret_access_key=os.getenv('SPACES_SECRET')) 
 
     client.download_file('validin-knowledge-base', 'rag/main.pdf', 'assets/main.pdf')
-
-download_assets()
+    client.download_file('validin-knowledge-base', 'rag/docs.pdf', 'assets/docs.pdf')
+    
 
 def vectorize_assets():
+    urls = [
+        "https://app.validin.com/pricing",
+    ]
     loaders = [
-        PyPDFLoader("assets/main.pdf")
+        PyPDFLoader("assets/main.pdf"),
+        PyPDFLoader("assets/docs.pdf"),
+        PlaywrightURLLoader(urls=urls, remove_selectors=["header", "footer"])
     ]
 
     docs = []
@@ -54,8 +63,6 @@ def vectorize_assets():
         by_text = False
     )
     return docs,vectorstore
-
-docs, vectorstore = vectorize_assets()
 
 def getAnswer(message, history):
     
@@ -82,9 +89,19 @@ def getAnswer(message, history):
         | StrOutputParser() 
     )
 
+    # action = "Pricing Details"
+    # if(action in message):
+    #     tools = [getRestApiResponse()]
+    #     agent = initialize_agent(tools, llm, agent=AgentType.OPENAI_FUNCTIONS, verbose=True)
+    #     result = agent.run(message)
+    # else:
+    #     result = rag_chain.invoke(message)
     result = rag_chain.invoke(message)
-
     return result
+
+download_assets()
+
+docs, vectorstore = vectorize_assets()
 
 demo = gr.ChatInterface(
     getAnswer,
@@ -98,6 +115,10 @@ demo = gr.ChatInterface(
     retry_btn=None,
     undo_btn=None,
     clear_btn="Clear")
+
+# @tool
+# def getRestApiResponse():
+#     return "This is response from one of the tools from within Validin ecosystem"
 
 if __name__ == "__main__":
     demo.launch(show_api=False, debug=False, server_name="0.0.0.0")
